@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import openpyxl
 from openpyxl import load_workbook
 from selenium import webdriver
@@ -10,14 +11,13 @@ import re
 import sys
 import time
 
-
 # INPUT
 nome_file_excel = 'film_USA_comici.xlsx'
-URL_IMDB ="https://www.imdb.com/search/title/?title_type=feature&release_date=1985-01-01,2023-12-31&genres=comedy&countries=US"
+URL_IMDB = "https://www.imdb.com/search/title/?title_type=feature&release_date=1985-01-01,2023-12-31&genres=comedy&countries=US"
 
 FILM_DA_CERCARE = []
 FILM_CLASSIFICATI = []
-contatore_rimanenti = 1
+scarti = 0
 
 def premiPulsanteAltri50():
     # Trova il pulsante "Altri 50" e il contenitore dei risultati
@@ -32,9 +32,11 @@ def premiPulsanteAltri50():
     buttonMore.click()
     time.sleep(2)
 
+
 def pausa():
     print("premi invio per continuare...")
     input()
+
 
 def ottieniTitoli():
     # Apri la pagina web
@@ -50,12 +52,13 @@ def ottieniTitoli():
     except:
         pass
 
-    pausa()
+    #pausa()
 
     # Click on "more" multiple times (start, end, step)
-    for i in range(1,10,1):
+    for i in range(1, 8, 1):
         premiPulsanteAltri50()
-    
+        print("Setacciando IMDB...", "pag. ",i+1)
+
     # Trova il contenitore dei risultati
     content = driver.find_elements(By.CLASS_NAME, 'ipc-title__text')
 
@@ -64,11 +67,11 @@ def ottieniTitoli():
         titolo = titolo_element.text
         titolo_senza_numero = re.sub(r'^\d+\.\s*', '', titolo)
         FILM_DA_CERCARE.append(titolo_senza_numero)
-
+    '''
     # Stampa i titoli aggiunti alla lista
     for titolo in FILM_DA_CERCARE:
         print(titolo)
-
+    '''
     print("film trovati: ", len(FILM_DA_CERCARE))
 
 
@@ -78,7 +81,8 @@ def formatta_titolo(titolo):
     titolo_formattato = titolo_formattato + "+film"
     return titolo_formattato
 
-def ricercaFilm(film):
+
+def ricercaFilm(film, barra_avanzamento):
     # Apri la pagina web
     driver.get("https://www.google.com/search?q=" + formatta_titolo(film))
 
@@ -107,10 +111,10 @@ def ricercaFilm(film):
 
         punteggio_match = re.search(r'\d+%', punteggio_text)
 
-        #estrai anno, genere e durata
-        metadati_film = driver.find_elements(By.XPATH, '//*[@id="rcnt"]/div[2]/div/div/div[3]/div/div[1]/div/div/div/div[2]/div[1]/div')
+        # estrai anno, genere e durata
+        metadati_film = driver.find_elements(By.XPATH,
+                                             '//*[@id="rcnt"]/div[2]/div/div/div[3]/div/div[1]/div/div/div/div[2]/div[1]/div')
         for (dato) in metadati_film:
-
             stringa = dato.text
 
             # Trova l'anno utilizzando un'espressione regolare
@@ -125,22 +129,24 @@ def ricercaFilm(film):
             durata_match = re.search(r'\d+h \d+m', stringa)
             durata = durata_match.group() if durata_match else None
 
+            '''
             # Stampa i dati estratti
             print("Anno:", anno)
             print("Genere:", genere)
             print("Durata:", durata)
-
+            '''
         if punteggio_match:
             punteggio = punteggio_match.group()
             FILM_CLASSIFICATI.append((film, punteggio, anno, genere, durata))
-            contatore_rimanenti = len(FILM_DA_CERCARE) - len(FILM_CLASSIFICATI)
-            print(f"{contatore_rimanenti} film rimanenti")
-
+            barra_avanzamento.update(1)
+            #print(f"{contatore_rimanenti} film rimanenti")
+        '''
         else:
             print(f"{film}: N.D.")
-
+        '''
     except TimeoutException:
-        print(f"{film}: N.D.")
+        #print(f"{film}: N.D.")
+        pass
 
 # Carica il file Excel e leggi i film già presenti
 existing_films = set()
@@ -161,15 +167,25 @@ options = webdriver.ChromeOptions()
 # Inizializza il driver di Chrome con le opzioni
 driver = webdriver.Chrome(service=Service(driver_path), options=options)
 
-
 ottieniTitoli()
 
+# Inizializzazione della barra di avanzamento
+limite_sup_barra = int(len(FILM_DA_CERCARE))-int(scarti)
+barra_avanzamento = tqdm(range(0, limite_sup_barra), desc="Ricerca film")
+
 for film in FILM_DA_CERCARE:
+
+    barra_avanzamento.update()
     if film in existing_films:
-        print(f"Il film '{film}' è già presente nel database. Saltando la ricerca su Google.")
-        contatore_rimanenti = contatore_rimanenti-1
-        continue
-    ricercaFilm(film)
+        #print(f"Il film '{film}' è già presente nel database. Saltando la ricerca su Google.")
+        scarti = scarti+1
+    else:
+        ricercaFilm(film, barra_avanzamento)
+
+
+
+# Chiudi la barra di avanzamento
+barra_avanzamento.close()
 
 # Ordina gli elementi in base al punteggio (in ordine decrescente)
 FILM_CLASSIFICATI.sort(key=lambda x: int(x[1].rstrip('%')), reverse=True)
