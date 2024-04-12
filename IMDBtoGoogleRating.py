@@ -26,11 +26,11 @@ def premiPulsanteAltri50():
 
     # Scroll fino al pulsante "Altri 50"
     driver.execute_script("arguments[0].scrollIntoView();", buttonMore)
-    time.sleep(1)
+    time.sleep(3)
 
     # Fai clic sul pulsante "Altri 50"
     buttonMore.click()
-    time.sleep(2)
+    time.sleep(1)
 
 
 def pausa():
@@ -52,13 +52,12 @@ def ottieniTitoli():
     except:
         pass
 
-    #pausa()
-
+    '''
     # Click on "more" multiple times (start, end, step)
-    for i in range(1, 8, 1):
+    for i in range(1, 2, 1):
         premiPulsanteAltri50()
         print("Setacciando IMDB...", "pag. ",i+1)
-
+    '''
     # Trova il contenitore dei risultati
     content = driver.find_elements(By.CLASS_NAME, 'ipc-title__text')
 
@@ -164,25 +163,26 @@ driver_path = "C:/Chromedriver/chromedriver.exe"
 # Configura le opzioni del driver
 options = webdriver.ChromeOptions()
 
+# Disabilito i messaggi di Log
+options.add_argument("--log-level=3")  
+
 # Inizializza il driver di Chrome con le opzioni
 driver = webdriver.Chrome(service=Service(driver_path), options=options)
 
 ottieniTitoli()
 
 # Inizializzazione della barra di avanzamento
-limite_sup_barra = int(len(FILM_DA_CERCARE))-int(scarti)
-barra_avanzamento = tqdm(range(0, limite_sup_barra), desc="Ricerca film")
+limite_sup_barra = len(FILM_DA_CERCARE)
+barra_avanzamento = tqdm(total=limite_sup_barra, desc="Ricerca film")
 
 for film in FILM_DA_CERCARE:
-
-    barra_avanzamento.update()
     if film in existing_films:
         #print(f"Il film '{film}' è già presente nel database. Saltando la ricerca su Google.")
         scarti = scarti+1
+        barra_avanzamento.update()
+
     else:
         ricercaFilm(film, barra_avanzamento)
-
-
 
 # Chiudi la barra di avanzamento
 barra_avanzamento.close()
