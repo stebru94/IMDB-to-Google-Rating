@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import openpyxl
 from openpyxl import load_workbook
+from configparser import ConfigParser
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -11,9 +12,22 @@ import re
 import sys
 import time
 
+# Carica il file config.ini
+config = ConfigParser()
+config.read('config.ini')
+
+# Ottieni i valori dalle sezioni del file di configurazione
+URL_IMDB = config.get('parameters', 'URL_IMDB')
+pages_to_reveal = config.getint('parameters', 'pages_to_reveal')
+excel_file_name = config.get('parameters', 'excel_file_name')
+pause_after_cookies = config.getboolean('parameters', 'pause_after_cookies')
+
+'''
 # INPUT
-nome_file_excel = 'film_USA_comici.xlsx'
-URL_IMDB = "https://www.imdb.com/search/title/?title_type=feature&release_date=1985-01-01,2023-12-31&genres=comedy&countries=US"
+excel_file_name = 'SerieTV_Americane.xlsx'
+URL_IMDB = "https://www.imdb.com/search/title/?title_type=tv_series&release_date=1985-01-01,2023-12-31&countries=US"
+pages_to_reveal = 3
+'''
 
 FILM_DA_CERCARE = []
 FILM_CLASSIFICATI = []
@@ -33,8 +47,8 @@ def premiPulsanteAltri50():
     time.sleep(1)
 
 
-def pausa():
-    print("premi invio per continuare...")
+def pause():
+    print("press ENTER to continue...")
     input()
 
 
@@ -52,12 +66,15 @@ def ottieniTitoli():
     except:
         pass
 
-    '''
+    print(type(pause_after_cookies))
+    if pause_after_cookies == True:
+        pause() 
+    
     # Click on "more" multiple times (start, end, step)
-    for i in range(1, 2, 1):
+    for i in range(1, pages_to_reveal, 1):
         premiPulsanteAltri50()
         print("Setacciando IMDB...", "pag. ",i+1)
-    '''
+    
     # Trova il contenitore dei risultati
     content = driver.find_elements(By.CLASS_NAME, 'ipc-title__text')
 
@@ -77,7 +94,7 @@ def ottieniTitoli():
 def formatta_titolo(titolo):
     # Sostituisci gli spazi con il segno più (+)
     titolo_formattato = titolo.replace(" ", "+")
-    titolo_formattato = titolo_formattato + "+film"
+    titolo_formattato = titolo_formattato + "+serie+tv"
     return titolo_formattato
 
 
@@ -150,7 +167,8 @@ def ricercaFilm(film, barra_avanzamento):
 # Carica il file Excel e leggi i film già presenti
 existing_films = set()
 try:
-    workbook = load_workbook(nome_file_excel)
+    print(excel_file_name)
+    workbook = load_workbook(excel_file_name)
     sheet = workbook.active
     for row in sheet.iter_rows(min_row=2, min_col=1, max_col=1, values_only=True):
         existing_films.add(row[0])
@@ -199,7 +217,7 @@ driver.quit()
 
 # Verifica se il file Excel esiste già
 try:
-    workbook = load_workbook(nome_file_excel)
+    workbook = load_workbook(excel_file_name)
     sheet = workbook.active
 except FileNotFoundError:
     workbook = openpyxl.Workbook()  # Utilizza openpyxl.Workbook()
@@ -221,4 +239,4 @@ for film, punteggio, anno, genere, durata in FILM_CLASSIFICATI:
         sheet.append([film, punteggio, anno, genere, durata])
 
 # Salva il foglio Excel
-workbook.save(nome_file_excel)
+workbook.save(excel_file_name)
