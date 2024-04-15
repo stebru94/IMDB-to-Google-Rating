@@ -42,6 +42,8 @@ def premiPulsanteAltri50():
     driver.execute_script("arguments[0].scrollIntoView();", buttonMore)
     time.sleep(3)
 
+    driver.execute_script("window.scrollBy(0, -20000);")
+
     # Fai clic sul pulsante "Altri 50"
     buttonMore.click()
     time.sleep(1)
@@ -66,7 +68,6 @@ def ottieniTitoli():
     except:
         pass
 
-    print(type(pause_after_cookies))
     if pause_after_cookies == True:
         pause() 
     
@@ -74,6 +75,8 @@ def ottieniTitoli():
     for i in range(1, pages_to_reveal, 1):
         premiPulsanteAltri50()
         print("Setacciando IMDB...", "pag. ",i+1)
+
+    time.sleep(1)
     
     # Trova il contenitore dei risultati
     content = driver.find_elements(By.CLASS_NAME, 'ipc-title__text')
