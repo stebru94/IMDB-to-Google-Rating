@@ -38,17 +38,40 @@ scarti = 0
 def premiPulsanteAltri50():
     # Trova il pulsante "Altri 50" e il contenitore dei risultati
     buttonMore = driver.find_element(By.XPATH, "//span[@class='ipc-see-more__text' and text()='Altri 50']")
-    results_container = driver.find_element(By.CLASS_NAME, 'ipc-title__text')
-
+    
     # Scroll fino al pulsante "Altri 50"
     driver.execute_script("arguments[0].scrollIntoView();", buttonMore)
-    time.sleep(3)
-
-    driver.execute_script("window.scrollBy(0, -20000);")
-
+    
+    # Attendi un breve periodo di tempo per consentire il completamento dello scrolling
+    time.sleep(1)
+    
+    # Ottieni le dimensioni del viewport
+    viewport_height = driver.execute_script("return window.innerHeight;")
+    
+    # Ottieni la posizione del bottone rispetto all'inizio del documento
+    button_location = buttonMore.location_once_scrolled_into_view
+    
+    # Calcola la posizione verticale del bottone nel viewport
+    button_position_in_viewport = button_location['y']
+    
+    # Posizione verticale del centro del viewport
+    viewport_center = viewport_height / 2
+    
+    # Calcola l'offset necessario per centrare il bottone nello schermo
+    scroll_offset = button_position_in_viewport - viewport_center
+    
+    # Esegui lo scrolling per centrare il bottone nello schermo
+    driver.execute_script("window.scrollBy(0, arguments[0]);", scroll_offset)
+    
+    # Attendi un breve periodo di tempo per consentire il completamento dello scrolling
+    time.sleep(1)
+    
     # Fai clic sul pulsante "Altri 50"
     buttonMore.click()
+    
+    # Attendi un breve periodo di tempo per consentire il completamento dell'azione
     time.sleep(1)
+
 
 
 def pause():
