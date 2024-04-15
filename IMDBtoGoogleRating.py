@@ -17,10 +17,12 @@ config = ConfigParser()
 config.read('config.ini')
 
 # Ottieni i valori dalle sezioni del file di configurazione
-URL_IMDB = config.get('parameters', 'URL_IMDB')
-pages_to_reveal = config.getint('parameters', 'pages_to_reveal')
 excel_file_name = config.get('parameters', 'excel_file_name')
+URL_IMDB = config.get('parameters', 'URL_IMDB')
 pause_after_cookies = config.getboolean('parameters', 'pause_after_cookies')
+pages_to_reveal = config.getint('parameters', 'pages_to_reveal')
+suffix = config.get('parameters', 'suffix')
+
 
 '''
 # INPUT
@@ -97,7 +99,7 @@ def ottieniTitoli():
 def formatta_titolo(titolo):
     # Sostituisci gli spazi con il segno più (+)
     titolo_formattato = titolo.replace(" ", "+")
-    titolo_formattato = titolo_formattato + "+serie+tv"
+    titolo_formattato = titolo_formattato + " " + suffix
     return titolo_formattato
 
 
