@@ -12,11 +12,11 @@ import re
 import sys
 import time
 
-# Carica il file config.ini
+# Load the config.ini file
 config = ConfigParser()
 config.read('config.ini')
 
-# Ottieni i valori dalle sezioni del file di configurazione
+# Get values ​​from sections of the configuration file
 excel_file_name = config.get('parameters', 'excel_file_name')
 URL_IMDB = config.get('parameters', 'URL_IMDB')
 pause_after_cookies = config.getboolean('parameters', 'pause_after_cookies')
@@ -31,45 +31,45 @@ URL_IMDB = "https://www.imdb.com/search/title/?title_type=tv_series&release_date
 pages_to_reveal = 3
 '''
 
-FILM_DA_CERCARE = []
-FILM_CLASSIFICATI = []
-scarti = 0
+MOVIES_TO_FIND = []
+CLASSIFIED_MOVIES = []
+waste = 0
 
-def premiPulsanteAltri50():
-    # Trova il pulsante "Altri 50" e il contenitore dei risultati
+def pressButtonMore():
+    # Find the "50 more" button and the results box
     buttonMore = driver.find_element(By.XPATH, "//span[@class='ipc-see-more__text' and text()='Altri 50']")
     
-    # Scroll fino al pulsante "Altri 50"
+    # Scroll to the "50 more" button
     driver.execute_script("arguments[0].scrollIntoView();", buttonMore)
     
-    # Attendi un breve periodo di tempo per consentire il completamento dello scrolling
+    # Please wait a short period of time to allow scrolling to complete
     time.sleep(1)
     
-    # Ottieni le dimensioni del viewport
+    # Get the viewport dimensions
     viewport_height = driver.execute_script("return window.innerHeight;")
     
-    # Ottieni la posizione del bottone rispetto all'inizio del documento
+    # Get the position of the button relative to the beginning of the document
     button_location = buttonMore.location_once_scrolled_into_view
     
-    # Calcola la posizione verticale del bottone nel viewport
+    # Calculate the vertical position of the button in the viewport
     button_position_in_viewport = button_location['y']
     
-    # Posizione verticale del centro del viewport
+    # Vertical position of the viewport center
     viewport_center = viewport_height / 2
     
-    # Calcola l'offset necessario per centrare il bottone nello schermo
+    # Calculate the offset needed to center the button on the screen
     scroll_offset = button_position_in_viewport - viewport_center
     
-    # Esegui lo scrolling per centrare il bottone nello schermo
+    # Scroll to center the button on the screen
     driver.execute_script("window.scrollBy(0, arguments[0]);", scroll_offset)
     
-    # Attendi un breve periodo di tempo per consentire il completamento dello scrolling
+    # Please wait a short period of time to allow scrolling to complete
     time.sleep(1)
     
-    # Fai clic sul pulsante "Altri 50"
+    # Click the "50 more" button
     buttonMore.click()
     
-    # Attendi un breve periodo di tempo per consentire il completamento dell'azione
+    # Please wait a short period of time for the action to complete
     time.sleep(1)
 
 
@@ -79,14 +79,14 @@ def pause():
     input()
 
 
-def ottieniTitoli():
-    # Apri la pagina web
+def getTitles():
+    # Open the web page
     driver.get(URL_IMDB)
 
-    # Attendi che la pagina sia caricata
+    # Wait for the page to load
     driver.implicitly_wait(1)
 
-    # clicca su accetto tutti i cookie
+    # click on I accept all cookies
     try:
         button = driver.find_element(By.XPATH, '//*[@id="__next"]/div/div/div[2]/div/button[2]')
         button.click()
@@ -98,173 +98,173 @@ def ottieniTitoli():
     
     # Click on "more" multiple times (start, end, step)
     for i in range(1, pages_to_reveal, 1):
-        premiPulsanteAltri50()
-        print("Setacciando IMDB...", "pag. ",i+1)
+        pressButtonMore()
+        print("Checking IMDB...", "pag. ",i+1)
 
     time.sleep(1)
     
-    # Trova il contenitore dei risultati
+    # Find the results container
     content = driver.find_elements(By.CLASS_NAME, 'ipc-title__text')
 
-    # Estrai i dati per ogni risultato e formatta il titolo
-    for titolo_element in content:
-        titolo = titolo_element.text
-        titolo_senza_numero = re.sub(r'^\d+\.\s*', '', titolo)
-        FILM_DA_CERCARE.append(titolo_senza_numero)
+    # Extract data for each result and format the title
+    for title_element in content:
+        title = title_element.text
+        title_without_number = re.sub(r'^\d+\.\s*', '', title)
+        MOVIES_TO_FIND.append(title_without_number)
     '''
-    # Stampa i titoli aggiunti alla lista
-    for titolo in FILM_DA_CERCARE:
-        print(titolo)
+    # Print titles added to list
+    for title in MOVIES_TO_FIND:
+        print(title)
     '''
-    print("film trovati: ", len(FILM_DA_CERCARE))
+    print("movie founded: ", len(MOVIES_TO_FIND))
 
 
-def formatta_titolo(titolo):
-    # Sostituisci gli spazi con il segno più (+)
-    titolo_formattato = titolo.replace(" ", "+")
-    titolo_formattato = titolo_formattato + " " + suffix
-    return titolo_formattato
+def formatTitle(title):
+    # Replace spaces with plus signs (+)
+    formatted_title = title.replace(" ", "+")
+    formatted_title = formatted_title + " " + suffix
+    return formatted_title
 
 
-def ricercaFilm(film, barra_avanzamento):
-    # Apri la pagina web
-    driver.get("https://www.google.com/search?q=" + formatta_titolo(film))
+def searchMovie(movie, progress_bar):
+    # Open the web page
+    driver.get("https://www.google.com/search?q=" + formatTitle(movie))
 
-    # Attendi che la pagina sia caricata
+    # Wait for the page to load
     driver.implicitly_wait(1)
 
-    # clicca su accetto tutti i cookie
+    # click on I accept all cookies
     try:
         button = driver.find_element(By.ID, "L2AGLb")
         button.click()
     except:
         pass
 
-    anno = None
-    genere = None
-    durata = None
+    year = None
+    genre = None
+    duration = None
 
-    # Attendi fino a 10 secondi per la presenza dell'elemento con la classe ".a19vA"
+    # Wait up to 10 seconds for the item to appear with the class ".a19vA"
     try:
         content = WebDriverWait(driver, 1).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, ".a19vA"))
         )
 
-        # Estrai i dati per ogni risultato
-        punteggio_text = content.text
+        # Extract data for each result
+        score_text = content.text
 
-        punteggio_match = re.search(r'\d+%', punteggio_text)
+        score_match = re.search(r'\d+%', score_text)
 
-        # estrai anno, genere e durata
-        metadati_film = driver.find_elements(By.XPATH,
+        # extracting year, genre e duration
+        metadata_movie = driver.find_elements(By.XPATH,
                                              '//*[@id="rcnt"]/div[2]/div/div/div[3]/div/div[1]/div/div/div/div[2]/div[1]/div')
-        for (dato) in metadati_film:
-            stringa = dato.text
+        for (data) in metadata_movie:
+            string = data.text
 
-            # Trova l'anno utilizzando un'espressione regolare
-            anno_match = re.search(r'\b\d{4}\b', stringa)
-            anno = anno_match.group() if anno_match else None
+            # Find the year using a regular expression
+            year_match = re.search(r'\b\d{4}\b', string)
+            year = year_match.group() if year_match else None
 
-            # Trova il genere utilizzando un'espressione regolare
-            genere_match = re.search(r'(?<=‧ ).*?(?= ‧)', stringa)
-            genere = genere_match.group() if genere_match else None
+            # Find the genre using a regular expression
+            genre_match = re.search(r'(?<=‧ ).*?(?= ‧)', string)
+            genre = genre_match.group() if genre_match else None
 
-            # Trova la durata utilizzando un'espressione regolare
-            durata_match = re.search(r'\d+h \d+m', stringa)
-            durata = durata_match.group() if durata_match else None
+            # Find the duration using a regular expression
+            duration_match = re.search(r'\d+h \d+m', string)
+            duration = duration_match.group() if duration_match else None
 
             '''
-            # Stampa i dati estratti
-            print("Anno:", anno)
-            print("Genere:", genere)
-            print("Durata:", durata)
+            # Print extracted data
+            print("year:", year)
+            print("genre:", genre)
+            print("duration:", duration)
             '''
-        if punteggio_match:
-            punteggio = punteggio_match.group()
-            FILM_CLASSIFICATI.append((film, punteggio, anno, genere, durata))
-            barra_avanzamento.update(1)
-            #print(f"{contatore_rimanenti} film rimanenti")
+        if score_match:
+            score = score_match.group()
+            CLASSIFIED_MOVIES.append((movie, score, year, genre, duration))
+            progress_bar.update(1)
+            #print(f"{contatore_rimanenti} movie rimanenti")
         '''
         else:
-            print(f"{film}: N.D.")
+            print(f"{movie}: N.D.")
         '''
     except TimeoutException:
-        #print(f"{film}: N.D.")
+        #print(f"{movie}: N.D.")
         pass
 
-# Carica il file Excel e leggi i film già presenti
-existing_films = set()
+# Load the Excel file and read the movies already present
+existing_movies = set()
 try:
     print(excel_file_name)
     workbook = load_workbook(excel_file_name)
     sheet = workbook.active
     for row in sheet.iter_rows(min_row=2, min_col=1, max_col=1, values_only=True):
-        existing_films.add(row[0])
+        existing_movies.add(row[0])
 except FileNotFoundError:
-    pass  # Se il file non esiste, non ci sono film già presenti
+    pass  # If the file does not exist, there are no movies already present
 
-# Imposta il path del driver
+# Set the driver path
 driver_path = "C:/Chromedriver/chromedriver.exe"
 
-# Configura le opzioni del driver
+# Configure driver options
 options = webdriver.ChromeOptions()
 
-# Disabilito i messaggi di Log
+# I disable Log messages
 options.add_argument("--log-level=3")  
 
-# Inizializza il driver di Chrome con le opzioni
+# Initialize the Chrome driver with options
 driver = webdriver.Chrome(service=Service(driver_path), options=options)
 
-ottieniTitoli()
+getTitles()
 
-# Inizializzazione della barra di avanzamento
-limite_sup_barra = len(FILM_DA_CERCARE)
-barra_avanzamento = tqdm(total=limite_sup_barra, desc="Ricerca film")
+# Initializing the progress bar
+upper_bar_limit = len(MOVIES_TO_FIND)
+progress_bar = tqdm(total=upper_bar_limit, desc="Scanning movies..")
 
-for film in FILM_DA_CERCARE:
-    if film in existing_films:
-        #print(f"Il film '{film}' è già presente nel database. Saltando la ricerca su Google.")
-        scarti = scarti+1
-        barra_avanzamento.update()
+for movie in MOVIES_TO_FIND:
+    if movie in existing_movies:
+        #print(f"The movie '{movie}' is already present in the database. Skipping the Google search.")
+        waste = waste+1
+        progress_bar.update()
 
     else:
-        ricercaFilm(film, barra_avanzamento)
+        searchMovie(movie, progress_bar)
 
-# Chiudi la barra di avanzamento
-barra_avanzamento.close()
+# Close the progress bar
+progress_bar.close()
 
-# Ordina gli elementi in base al punteggio (in ordine decrescente)
-FILM_CLASSIFICATI.sort(key=lambda x: int(x[1].rstrip('%')), reverse=True)
+# Sort items by score (in descending order)
+CLASSIFIED_MOVIES.sort(key=lambda x: int(x[1].rstrip('%')), reverse=True)
 
-# Stampa gli elementi ordinati
-for film, punteggio, anno, genere, durata in FILM_CLASSIFICATI:
-    print(f"{film}: {punteggio}, {anno}, {genere}, {durata}")
+# Print the sorted items
+for movie, score, year, genre, duration in CLASSIFIED_MOVIES:
+    print(f"{movie}: {score}, {year}, {genre}, {duration}")
 
-# Chiudi il driver
+# Close the driver
 driver.quit()
 
-# Verifica se il file Excel esiste già
+# Check if the Excel file already exists
 try:
     workbook = load_workbook(excel_file_name)
     sheet = workbook.active
 except FileNotFoundError:
-    workbook = openpyxl.Workbook()  # Utilizza openpyxl.Workbook()
+    workbook = openpyxl.Workbook()  # using openpyxl.Workbook()
     sheet = workbook.active
-    sheet['A1'] = 'Titolo'
+    sheet['A1'] = 'title'
     sheet['B1'] = 'Percentuale'
-    sheet['C1'] = 'Anno'
-    sheet['D1'] = 'Genere'
-    sheet['E1'] = 'Durata'
+    sheet['C1'] = 'year'
+    sheet['D1'] = 'genre'
+    sheet['E1'] = 'duration'
 
-# Aggiungi i dati dei film al foglio Excel solo se non sono già presenti
-for film, punteggio, anno, genere, durata in FILM_CLASSIFICATI:
-    film_presente = False
+# Add movie data to the Excel sheet only if it is not already present
+for movie, score, year, genre, duration in CLASSIFIED_MOVIES:
+    present_movie = False
     for row in sheet.iter_rows(min_row=2, min_col=1, max_col=1, values_only=True):
-        if film in row:
-            film_presente = True
+        if movie in row:
+            present_movie = True
             break
-    if not film_presente:
-        sheet.append([film, punteggio, anno, genere, durata])
+    if not present_movie:
+        sheet.append([movie, score, year, genre, duration])
 
-# Salva il foglio Excel
+# Save the Excel sheet
 workbook.save(excel_file_name)
