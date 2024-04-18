@@ -26,7 +26,7 @@ suffix = config.get('parameters', 'suffix')
 
 '''
 # INPUT
-excel_file_name = 'SerieTV_Americane.xlsx'
+excel_file_name = 'SerieTV_American.xlsx'
 URL_IMDB = "https://www.imdb.com/search/title/?title_type=tv_series&release_date=1985-01-01,2023-12-31&countries=US"
 pages_to_reveal = 3
 '''
